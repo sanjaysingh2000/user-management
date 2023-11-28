@@ -1,5 +1,8 @@
 package com.example.demo.service;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,12 +18,16 @@ import com.example.demo.binding.Login;
 import com.example.demo.binding.User;
 import com.example.demo.entity.UserMaster;
 import com.example.demo.repo.UserMasterRepo;
+import com.example.demo.utils.EmailUtils;
 
 @Service
-public class UserMgmtImpl implements UserMgmtService {
+public class UserMgmtServiceImpl implements UserMgmtService {
 
 	@Autowired
 	private UserMasterRepo userMasterRepo;
+
+	@Autowired
+	private EmailUtils emailUtils;
 
 	@Override
 	public boolean saveUser(User user) {
@@ -34,7 +41,12 @@ public class UserMgmtImpl implements UserMgmtService {
 
 		UserMaster save = userMasterRepo.save(entity);
 
-		// to send registration email
+		String subject = "Your Registration Success";
+		String filename = "REG-EMAIL-BODY.txt";
+		String body = readRegEmailBody(entity.getFullName(), entity.getPassword(), filename);
+		
+			
+		emailUtils.sendMail(user.getEmail(), subject, body);
 
 		return save.getUserId() != null;
 	}
@@ -140,16 +152,23 @@ public class UserMgmtImpl implements UserMgmtService {
 
 	@Override
 	public String forgotPwd(String email) {
-		 UserMaster entity = userMasterRepo.findByEmail(email);
-		 
-		 if(entity == null) {
-			 
-			 return "Invalid Email";
-			 
-		 }
-		 
-		 //todo : send pswd to user in email
-		 return null;
+		UserMaster entity = userMasterRepo.findByEmail(email);
+
+		if (entity == null) {
+
+			return "Invalid Email";
+
+		}
+
+		// todo : send pswd to user in email
+		String subject = "Forgot Password";
+		String fileName = "RECOVER-PWD-BODY.txt";
+		String body = readRegEmailBody(entity.getFullName(), entity.getPassword(), fileName);
+		boolean sendMail = emailUtils.sendMail(email, subject, body);
+		if(sendMail) {
+			return "Password Sent to your registered email";
+		}
+		return null;
 	}
 
 	private String generateRandompwd() {
@@ -177,6 +196,36 @@ public class UserMgmtImpl implements UserMgmtService {
 		String randomString = sb.toString();
 		System.out.println("Random String is: " + randomString);
 		return randomString;
+	}
+
+	private String readRegEmailBody(String fullname, String pwd, String filename) {
+
+		String url = "";
+		String mailBody = null;
+		
+		try {
+			
+			FileReader	fr = new FileReader(filename);
+			BufferedReader br = new BufferedReader(fr);
+
+			StringBuffer buffer = new StringBuffer();
+			String line = br.readLine();
+			while (line != null) {
+				buffer.append(line);
+				line = br.readLine();
+			}
+			br.close();
+			mailBody = buffer.toString();
+			mailBody = mailBody.replace("{FULLNAME}", fullname);
+			mailBody = mailBody.replace("{TEMP-PWD}", pwd);
+			mailBody = mailBody.replace("{URL}", url);
+			mailBody = mailBody.replace("PWD", pwd);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return filename;
 	}
 
 }
