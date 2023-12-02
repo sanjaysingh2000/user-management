@@ -1,6 +1,24 @@
-spring: 
- mail:
-  host: null
-  port: null
-  username: null
-  password: null
+spring:
+ datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/j2ee
+    username: root
+    password: sanjay
+    
+ jpa: 
+  hibernate:
+      ddl-auto: update
+  show-sql: true
+ 
+ 
+ mail: 
+  host: smtp.gmail.com
+  port: 587
+  username: 1914731@ggi.ac.in 
+  password: 123456789
+  properties: 
+   mail: 
+    smtp: 
+     auth: true
+     startttls: 
+     enable: true
